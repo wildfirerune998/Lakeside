@@ -1,0 +1,273 @@
+{
+  "name": "Lakeside",
+  "author": "Hel",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {
+    "pebble-clay": "^1.0.4"
+  },
+  "pebble": {
+    "displayName": "Lakeside",
+    "uuid": "416928db-d818-4bce-b7e0-71f16afbfbbc",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "diorite",
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": {
+      "READY": 1,
+      "API": 2,
+      "CONDITIONS": 3,
+      "SUNRISE": 4,
+      "SUNSET": 5
+    },
+    "capabilities": [
+      "location",
+      "configurable"
+    ],
+    "resources": {
+      "media": [
+        {
+          "file": "fonts/atwriter_lite.ttf",
+          "name": "ATWRITER_63",
+          "type": "font",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "fonts/atwriter_lite_reflection.ttf",
+          "name": "ATWRITER_REFLECT_63",
+          "type": "font",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/loading.png",
+          "name": "LOADING",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/ripple_day.png",
+          "name": "RIPPLE_DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/ripple_night.png",
+          "name": "RIPPLE_NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/cloud_day.png",
+          "name": "CLOUD_DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/cloud_night.png",
+          "name": "CLOUD_NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/night.png",
+          "name": "NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/day.png",
+          "name": "DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/thunderstorms_day.png",
+          "name": "THUNDERSTORMS_DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/thunderstorms_night.png",
+          "name": "THUNDERSTORMS_NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/tornado_day.png",
+          "name": "TORNADO_DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/tornado_night.png",
+          "name": "TORNADO_NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/sunset.png",
+          "name": "SUNSET",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/sunrise.png",
+          "name": "SUNRISE",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/snow_day.png",
+          "name": "SNOW_DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/snow_night.png",
+          "name": "SNOW_NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/rain_day.png",
+          "name": "RAIN_DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/rain_night.png",
+          "name": "RAIN_NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/fog_day.png",
+          "name": "FOG_DAY",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        },
+        {
+          "file": "images/fog_night.png",
+          "name": "FOG_NIGHT",
+          "type": "bitmap",
+          "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+          ]
+        }
+      ]
+    }
+  }
+}
