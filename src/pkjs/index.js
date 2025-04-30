@@ -6,6 +6,9 @@ var clayConfig = require('./config.json');
 var clay = new Clay(clayConfig);
 
 var api = "";
+var conditions;
+var sunset;
+var sunrise;
 
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
@@ -17,9 +20,9 @@ var xhrRequest = function (url, type, callback) {
 };
 
 function locationSuccess(pos) {
-  var conditions;
-  var sunset;
-  var sunrise;
+//   var conditions;
+//   var sunset;
+//   var sunrise;
   // We will request the weather here
   // Construct URL
 
@@ -44,7 +47,8 @@ function locationSuccess(pos) {
           sunset = json.sys.sunset;      
         
           // sunrise
-          sunrise = json.sys.sunrise;       
+          sunrise = json.sys.sunrise;  
+   
         
           // Assemble dictionary using our keys
           var dictionary = {
@@ -54,7 +58,12 @@ function locationSuccess(pos) {
             "API": api
           };
           
+            // console.log(conditions); 
+            console.log(sunrise); 
+            console.log(sunset); 
             console.log(conditions); 
+            // console.log( pos.coords.latitude); 
+            // console.log( pos.coords.longitude); 
           // Send to Pebble
           Pebble.sendAppMessage(dictionary, function(e) {
             console.log('Weather info sent to Pebble successfully!');
@@ -103,24 +112,45 @@ Pebble.addEventListener('ready', function(e) {
      
     );  }
 );
+
+var messageKeys = require('message_keys');
 // Listen for when an AppMessage is received
 Pebble.addEventListener('appmessage', function(e) {
+    
+    console.log('appmessage');
   if (!e.payload){
+    console.log('no payload');
     return;
   }
 
   var api_string;
-  
   api_string = JSON.stringify(e.payload.API);
   if (api_string) {
     api = api_string.replace(/"/g,"");
+  }
+  
+  var conditions_string;
+  conditions_string = JSON.stringify(e.payload.CONDITIONS);
+  if (conditions_string) {
+    conditions = conditions_string.replace(/"/g,"");
+  }
+
+  var sunrise_string;
+  sunrise_string = JSON.stringify(e.payload.SUNRISE);
+  if (sunrise_string) {
+    sunrise = sunrise_string.replace(/"/g,"");
+  }
+
+  var sunset_string;
+  sunset_string = JSON.stringify(e.payload.SUNSET);
+  if (sunset_string) {
+    sunset = sunset_string.replace(/"/g,"");
   }
   
   getWeather();
 
   }                     
 );
-var messageKeys = require('message_keys');
 
 Pebble.addEventListener('webviewclosed', function(e) {
   
@@ -133,6 +163,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
   var claySettings = clay.getSettings(e.response);
 
   api = claySettings[messageKeys.API];
+  conditions = claySettings[messageKeys.CONDITIONS];
+  sunrise = claySettings[messageKeys.SUNRISE];
+  sunset = claySettings[messageKeys.SUNSET];
 
   getWeather(); 
 
