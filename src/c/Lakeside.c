@@ -112,8 +112,8 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
     snprintf(conditions_buffer, sizeof(conditions_buffer), "%s", settings.conditions); 
   }
 
-  // gbitmap_destroy(s_weather_bitmap);
-  // gbitmap_destroy(s_ripple_bitmap);
+  gbitmap_destroy(s_weather_bitmap);
+  gbitmap_destroy(s_ripple_bitmap);
 
   current_time = (int)time(NULL);
 
@@ -172,7 +172,9 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
     text_layer_set_text_color(r_time_layer, GColorWhite); //GColorWhite if night/sunset, GColorBlack if day/sunrise
 
     s_ripple_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RIPPLE_NIGHT); 
-  } else {
+  } 
+  
+  if (daynight_switch == 'D'){
     // set text colors, black text and clear background for day
     text_layer_set_text_color(s_time_layer, GColorBlack); // GColorBlack if night/sunset, GColorClear if day/sunrise
 
@@ -262,17 +264,17 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
     }
   }
 
-  if (conditions_switch == ' ') {
-    //We didn't have anything, but we had a value for conditions
-    // This would only happen if OpenWeather added a new MAIN value in the json
-    // let's just default to Clear, since we know that much
-    if (daynight_switch == 'N'){
-      s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_NIGHT);
-    } else {
-      s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DAY);
-    }
-    conditions_switch = 'D';
-  }
+  // if (conditions_switch == ' ') {
+  //   //We didn't have anything, but we had a value for conditions
+  //   // This would only happen if OpenWeather added a new MAIN value in the json
+  //   // let's just default to Clear, since we know that much
+  //   if (daynight_switch == 'N'){
+  //     s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_NIGHT);
+  //   } else {
+  //     s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DAY);
+  //   }
+  //   conditions_switch = 'D';
+  // }
 
   // APP_LOG(APP_LOG_LEVEL_INFO, "daynight_switch %c", daynight_switch);
   // APP_LOG(APP_LOG_LEVEL_INFO, "conditions_switch %c", conditions_switch);
@@ -382,7 +384,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   // APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler settings.sunrise_time %d", settings.sunrise_time);
   
   // Get weather update every 30 minutes
-  if((tick_time->tm_min % 30 == 0)) {
+  if((tick_time->tm_min % 5 == 0)) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "5min tick_handler about to update_weather");
     send_settings_update_weather();
   }
@@ -438,8 +440,8 @@ static void window_load(Window *window) {
 }
 
 static void window_unload(Window *window) {
-  // text_layer_destroy(s_time_layer);
-  // text_layer_destroy(r_time_layer);
+  text_layer_destroy(s_time_layer);
+  text_layer_destroy(r_time_layer);
 }
 
 
