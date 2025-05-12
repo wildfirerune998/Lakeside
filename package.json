@@ -17,22 +17,18 @@
     "targetPlatforms": [
       "aplite",
       "basalt",
-      "diorite",
-      "emery"
+      "diorite"
     ],
     "watchapp": {
       "watchface": true
     },
     "messageKeys": {
       "READY": 1,
-      "API": 2,
-      "CONDITIONS": 3,
-      "SUNRISE": 4,
-      "SUNSET": 5
+      "WEATHERCODE": 2,
+      "ISDAY": 3
     },
     "capabilities": [
-      "location",
-      "configurable"
+      "location"
     ],
     "resources": {
       "media": [
@@ -43,8 +39,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -54,8 +49,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -65,8 +59,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -76,8 +69,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -87,8 +79,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -98,8 +89,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -109,8 +99,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -120,8 +109,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -131,8 +119,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -142,8 +129,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -153,52 +139,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
-          ]
-        },
-        {
-          "file": "images/tornado_day.png",
-          "name": "TORNADO_DAY",
-          "type": "bitmap",
-          "targetPlatforms": [
-            "aplite",
-            "basalt",
-            "diorite",
-            "emery"
-          ]
-        },
-        {
-          "file": "images/tornado_night.png",
-          "name": "TORNADO_NIGHT",
-          "type": "bitmap",
-          "targetPlatforms": [
-            "aplite",
-            "basalt",
-            "diorite",
-            "emery"
-          ]
-        },
-        {
-          "file": "images/sunset.png",
-          "name": "SUNSET",
-          "type": "bitmap",
-          "targetPlatforms": [
-            "aplite",
-            "basalt",
-            "diorite",
-            "emery"
-          ]
-        },
-        {
-          "file": "images/sunrise.png",
-          "name": "SUNRISE",
-          "type": "bitmap",
-          "targetPlatforms": [
-            "aplite",
-            "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -208,8 +149,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -219,8 +159,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -230,8 +169,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -241,8 +179,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -252,8 +189,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         },
         {
@@ -263,8 +199,7 @@
           "targetPlatforms": [
             "aplite",
             "basalt",
-            "diorite",
-            "emery"
+            "diorite"
           ]
         }
       ]

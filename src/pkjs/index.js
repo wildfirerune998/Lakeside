@@ -1,14 +1,12 @@
-// Import the Clay package
-var Clay = require('pebble-clay');
-// Load our Clay configuration file
-var clayConfig = require('./config.json');
-// Initialize Clay
-var clay = new Clay(clayConfig);
+// // Import the Clay package
+// var Clay = require('pebble-clay');
+// // Load our Clay configuration file
+// var clayConfig = require('./config.json');
+// // Initialize Clay
+// var clay = new Clay(clayConfig);
 
-var api = "";
-var conditions;
-var sunset;
-var sunrise;
+var weatherCode = 100;
+var isDay = 5;
 
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
@@ -28,40 +26,39 @@ function locationSuccess(pos) {
 
   // Don't bother with doing ANYTHING if they don't actually want the weather
     // Don't bother with anything unless you have an API key
-    if (api) {
-        var url = "http://api.openweathermap.org/data/2.5/weather?lat=" + 
-            pos.coords.latitude + "&lon=" + pos.coords.longitude + "&appid=" + api + "&units=METRIC";
+    // if (api) {
+        var url = "http://api.open-meteo.com/v1/forecast?latitude=" + 
+            pos.coords.latitude + "&longitude=" + pos.coords.longitude + "&current=weather_code,is_day";
+
       // Send request to OpenWeatherMap
       xhrRequest(url, 'GET', function(responseText) {
         // responseText contains a JSON object with weather info
         var json = JSON.parse(responseText);
 
-        if (json.cod != 200){
-          //We have an error, so nothing
-        } else {
+        console.log(JSON.stringify(json));
+        if (json){
+
+          weatherCode = 100;
+          isDay = 5;
 
           // Conditions
-          conditions = json.weather[0].main;      
+          var lcl_weatherCode = json.current.weather_code;      
+          weatherCode = lcl_weatherCode;
         
-          // sunset
-          sunset = json.sys.sunset;      
-        
-          // sunrise
-          sunrise = json.sys.sunrise;  
-   
+          // isDay
+          var lcl_isDay = json.current.is_day;      
+          if (lcl_isDay == 0 || lcl_isDay == 1){
+            isDay = lcl_isDay;
+          }
         
           // Assemble dictionary using our keys
           var dictionary = {
-            "CONDITIONS": conditions,
-            "SUNRISE": sunrise,
-            "SUNSET": sunset,
-            "API": api
+            "WEATHERCODE": weatherCode,
+            "ISDAY": isDay
           };
           
-            // console.log(conditions); 
-            console.log(sunrise); 
-            console.log(sunset); 
-            console.log(conditions); 
+            console.log(weatherCode); 
+            console.log(isDay); 
             // console.log( pos.coords.latitude); 
             // console.log( pos.coords.longitude); 
           // Send to Pebble
@@ -79,7 +76,7 @@ function locationSuccess(pos) {
       //console.log('END xhr request'); 
     }; // API check
     //console.log('END API check'); 
-  }; //weather check
+  // }; //weather check
 
 function locationError(err) {
   console.log('Error requesting location!');
@@ -117,34 +114,21 @@ var messageKeys = require('message_keys');
 // Listen for when an AppMessage is received
 Pebble.addEventListener('appmessage', function(e) {
     
-    console.log('appmessage');
   if (!e.payload){
     console.log('no payload');
     return;
   }
-
-  var api_string;
-  api_string = JSON.stringify(e.payload.API);
-  if (api_string) {
-    api = api_string.replace(/"/g,"");
-  }
   
-  var conditions_string;
-  conditions_string = JSON.stringify(e.payload.CONDITIONS);
-  if (conditions_string) {
-    conditions = conditions_string.replace(/"/g,"");
+  var weatherCode_string;
+  weatherCode_string = JSON.stringify(e.payload.WEATHERCODE);
+  if (weatherCode_string) {
+    weatherCode = weatherCode_string.replace(/"/g,"");
   }
 
-  var sunrise_string;
-  sunrise_string = JSON.stringify(e.payload.SUNRISE);
-  if (sunrise_string) {
-    sunrise = sunrise_string.replace(/"/g,"");
-  }
-
-  var sunset_string;
-  sunset_string = JSON.stringify(e.payload.SUNSET);
-  if (sunset_string) {
-    sunset = sunset_string.replace(/"/g,"");
+  var isDay_string;
+  isDay_string = JSON.stringify(e.payload.isDay);
+  if (isDay_string) {
+    isDay = isDay_string.replace(/"/g,"");
   }
   
   getWeather();
@@ -162,10 +146,8 @@ Pebble.addEventListener('webviewclosed', function(e) {
   // Get the keys and values from each config item
   var claySettings = clay.getSettings(e.response);
 
-  api = claySettings[messageKeys.API];
-  conditions = claySettings[messageKeys.CONDITIONS];
-  sunrise = claySettings[messageKeys.SUNRISE];
-  sunset = claySettings[messageKeys.SUNSET];
+  weatherCode = claySettings[messageKeys.WEATHERCODE];
+  isDay = claySettings[messageKeys.ISDAY];
 
   getWeather(); 
 

@@ -14,23 +14,13 @@ static GBitmap *s_weather_bitmap;
 static GFont s_font;
 
 #define READY 1
-#define API 2
-#define CONDITIONS  3
-#define SUNRISE 4
-#define SUNSET 5
-
-// Persistent storage key
-// uint32_t MESSAGE_KEY_API = 9;
-// uint32_t MESSAGE_KEY_CONDITIONS = 8;
-// uint32_t MESSAGE_KEY_SUNRISE = 7;
-// uint32_t MESSAGE_KEY_SUNSET = 6;
+#define WEATHERCODE  2
+#define ISDAY 3
 
 // Define our settings struct
 typedef struct {
-  char api[255];
-  char conditions[25];
-  int sunrise_time;
-  int sunset_time;
+  int weatherCode;
+  int isDay;
 } ClaySettings;
 
 // An instance of the struct
@@ -39,284 +29,182 @@ static ClaySettings settings;
 
 // Save the settings to persistent storage
 static void default_settings() {
-  snprintf(settings.api, sizeof(settings.api), "%s", "");
-  snprintf(settings.conditions, sizeof(settings.conditions), "%s", "");
-  settings.sunrise_time = 0;
-  settings.sunset_time = 0;
+  settings.weatherCode = 100;
+  settings.isDay = 5;
 }
 
 // Save the settings to persistent storage
 static void save_settings() {
-  persist_write_string(MESSAGE_KEY_API, settings.api);
-  persist_write_string(MESSAGE_KEY_CONDITIONS, settings.conditions);
-  persist_write_int(MESSAGE_KEY_SUNRISE, settings.sunrise_time);
-  persist_write_int(MESSAGE_KEY_SUNSET, settings.sunset_time);
+  persist_write_int(MESSAGE_KEY_WEATHERCODE, settings.weatherCode);
+  persist_write_int(MESSAGE_KEY_ISDAY, settings.isDay);
 }
 
 // get the saved settings from persistent storage
 static void get_settings() {
   default_settings();
-  persist_read_string(MESSAGE_KEY_API, settings.api, sizeof(settings.api));
-  persist_read_string(MESSAGE_KEY_CONDITIONS, settings.conditions, sizeof(settings.conditions));
-  settings.sunrise_time = persist_read_int(MESSAGE_KEY_SUNRISE);
-  settings.sunset_time = persist_read_int(MESSAGE_KEY_SUNSET);
+  settings.weatherCode = persist_read_int(MESSAGE_KEY_WEATHERCODE);
+  settings.isDay = persist_read_int(MESSAGE_KEY_ISDAY);
 }
 
 // BEGIN weather shenanigans
 static void update_weather(DictionaryIterator *iterator, bool update_background_only) {
 
   // Store incoming information
-  static char conditions_buffer[32];
+  int weatherCode = 100;
+  int isDay = 5;
 
-  int current_time = 0;
-  int sunrise_time = 0;
-  int sunset_time = 0;
-  char conditions_switch = ' ';
-  char daynight_switch = ' ';
+  static GBitmap *local_weather_bitmap;
+  static GBitmap *local_ripple_bitmap;
     
   if (!update_background_only) {
     // Read tuples for data
-    Tuple *conditions_tuple = dict_find(iterator, CONDITIONS);
-    Tuple *sunrise_tuple = dict_find(iterator, SUNRISE);
-    Tuple *sunset_tuple = dict_find(iterator, SUNSET);
-    Tuple *api_tuple = dict_find(iterator, API);
+    Tuple *weatherCode_tuple = dict_find(iterator, WEATHERCODE);
+    Tuple *isDay_tuple = dict_find(iterator, ISDAY);
 
-    if (api_tuple){
-      snprintf(settings.api, sizeof(settings.api), "%s", api_tuple->value->cstring);
-    } 
+    // If temp is available, use it. We may not have the weatherCode, but at least show the temp
 
-    // If temp is available, use it. We may not have the conditions, but at least show the temp
-
-    if (conditions_tuple) {
-      snprintf(conditions_buffer, sizeof(conditions_buffer), "%s", conditions_tuple->value->cstring); 
+    if (weatherCode_tuple) {
+      weatherCode = (int)weatherCode_tuple->value->int32;
     }
 
-    if (sunrise_tuple) {
-      sunrise_time =  (int)sunrise_tuple->value->int32;
+    if (isDay_tuple) {
+      isDay =  (int)isDay_tuple->value->int32;
     }
-
-    if (sunset_tuple) {
-      sunset_time =  (int)sunset_tuple->value->int32;
-    }
+    
+    APP_LOG(APP_LOG_LEVEL_INFO, "update_weather isDay %d", isDay);
+    APP_LOG(APP_LOG_LEVEL_INFO, "update_weather weatherCode %d", weatherCode);
   }
 
-  if (sunset_time == 0){
-    sunset_time = settings.sunset_time;
+  if (isDay != 1 && isDay != 0){
+    isDay = settings.isDay;
   }
 
-  if (sunrise_time == 0){
-    sunrise_time = settings.sunrise_time;
+  if (weatherCode > 99 ){
+    weatherCode = settings.weatherCode;
   }
 
-  if (!strlen(conditions_buffer)>0){
-    snprintf(conditions_buffer, sizeof(conditions_buffer), "%s", settings.conditions); 
-  }
-
-  gbitmap_destroy(s_weather_bitmap);
-  gbitmap_destroy(s_ripple_bitmap);
-
-  current_time = (int)time(NULL);
-
-
-  if (sunrise_time < current_time && current_time < sunset_time){
-    daynight_switch = 'D';
-    // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather DAYYYYYY %c", daynight_switch);
-  } 
-  if (sunrise_time < current_time &&  sunset_time < current_time){
-    daynight_switch = 'N';
-    // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather NIIIIIIGHT %c", daynight_switch);
-  }
-
-  int sunrise_start_range = sunrise_time - (60*30);
-  int sunrise_end_range = sunrise_time + (60*30);
-  
-  int sunset_start_range = sunset_time - (60*30);
-  int sunset_end_range = sunset_time + (60*30);
-
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunrise_start_range %d ", sunrise_start_range );
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather current_time %d ", current_time );
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunrise_end_range %d ", sunrise_end_range );
-
-  if (sunrise_start_range < current_time && current_time < sunrise_end_range){
-    daynight_switch = 'D';
-    conditions_switch = 'U';
-    s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_SUNRISE);
-  }
-
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunset_start_range %d ", sunset_start_range );
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather current_time %d ", current_time );
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunset_end_range %d ", sunset_end_range );
-
-  if (sunset_start_range < current_time && current_time < sunset_end_range){
-    daynight_switch = 'N';
-    conditions_switch = 'E';
-    s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_SUNSET);
-  }
-
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunset_time + (60*30) %d", sunset_time + (60*30));
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunrise_time - (60*30) %d", sunrise_time - (60*30));
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunrise_time %d", sunrise_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather current_time %d", current_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunset_time %d", sunset_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather daynight_switch %c", daynight_switch);
-
-
-  APP_LOG(APP_LOG_LEVEL_INFO, "update_weather AFTER!!!!!! %c", daynight_switch);
-  APP_LOG(APP_LOG_LEVEL_INFO, "update_weather AFTER!!!!!! %d %d %d", sunrise_time, current_time, sunset_time);
-
-  if (daynight_switch == 'N'){
+  if (isDay == 0){
     // set text colors, black text and clear background for day
     text_layer_set_text_color(s_time_layer, GColorWhite); // GColorBlack if night/sunset, GColorClear if day/sunrise
 
     text_layer_set_background_color(r_time_layer, GColorBlack); // GColorBlack if night/sunset, GColorClear if day/sunrise
     text_layer_set_text_color(r_time_layer, GColorWhite); //GColorWhite if night/sunset, GColorBlack if day/sunrise
 
-    s_ripple_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RIPPLE_NIGHT); 
+    local_ripple_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RIPPLE_NIGHT); 
   } 
   
-  if (daynight_switch == 'D'){
+  if (isDay == 1){
     // set text colors, black text and clear background for day
     text_layer_set_text_color(s_time_layer, GColorBlack); // GColorBlack if night/sunset, GColorClear if day/sunrise
 
     text_layer_set_background_color(r_time_layer, GColorWhite); // GColorBlack if night/sunset, GColorClear if day/sunrise
     text_layer_set_text_color(r_time_layer, GColorBlack); //GColorWhite if night/sunset, GColorBlack if day/sunrise
 
-    s_ripple_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RIPPLE_DAY); 
+    local_ripple_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RIPPLE_DAY); 
   }
   
-  // APP_LOG(APP_LOG_LEVEL_INFO, "conditions_buffer %s", conditions_buffer);
-  if (strlen(conditions_buffer)>0 && conditions_switch != 'E' && conditions_switch != 'U') {
-
-    // string search conditions_buffer for key words, but only if there's a value...
-
-    //Rain
-    if ((strstr(conditions_buffer,"Rain")) != NULL){
-      if (daynight_switch == 'N'){
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RAIN_NIGHT);
-      } else {
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RAIN_DAY);
-      }
-      conditions_switch = 'R';
+  //Rain
+  if (weatherCode == 51 
+    || weatherCode == 53 
+    || weatherCode == 55 
+    || weatherCode == 56 
+    || weatherCode == 57
+    || weatherCode == 61
+    || weatherCode == 63 
+    || weatherCode == 65 
+    || weatherCode == 66
+    || weatherCode == 67 
+    || weatherCode == 80 
+    || weatherCode == 81 
+    || weatherCode == 82){
+    if (isDay == 0){
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RAIN_NIGHT);
+    } else {
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_RAIN_DAY);
     }
-    //ThunderStorms 
-    if ((strstr(conditions_buffer,"ThunderStorms")) != NULL){
-      if (daynight_switch == 'N'){
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_THUNDERSTORMS_NIGHT);
-      } else {
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_THUNDERSTORMS_DAY);
-      }
-      conditions_switch = 'T';
+  }
+  //ThunderStorms 
+  if (weatherCode == 95 
+      || weatherCode == 96 
+      || weatherCode == 99){
+    if (isDay == 0){
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_THUNDERSTORMS_NIGHT);
+    } else {
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_THUNDERSTORMS_DAY);
     }
-    //Snow
-    if ((strstr(conditions_buffer,"Snow")) != NULL){
-      if (daynight_switch == 'N'){
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_SNOW_NIGHT);
-      } else {
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_SNOW_DAY);
-      }
-      conditions_switch = 'S';
+  }
+  //Snow
+  if (weatherCode == 71 
+    || weatherCode == 73 
+    || weatherCode == 75 
+    || weatherCode == 77
+    || weatherCode == 85 
+    || weatherCode == 86){
+    if (isDay == 0){
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_SNOW_NIGHT);
+    } else {
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_SNOW_DAY);
     }
-    //Clear
-    if ((strstr(conditions_buffer,"Clear")) != NULL){
-      if (daynight_switch == 'N'){
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_NIGHT);
-      } else {
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DAY);
-      }
-      conditions_switch = 'D';
+  }
+  //Clear
+  if (weatherCode == 0){
+    if (isDay == 0){
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_NIGHT);
+    } else {
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DAY);
     }
-    //Clouds
-    if ((strstr(conditions_buffer,"Clouds")) != NULL){
-      
-      // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather conditions_buffer was Clouds and matched %s", conditions_buffer);
-      if (daynight_switch == 'N'){
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_CLOUD_NIGHT);
-      } else {
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_CLOUD_DAY);
-      }
-      conditions_switch = 'C';
+  }
+  //Clouds
+  if (weatherCode == 1
+    || weatherCode == 2
+    || weatherCode == 3){
+    if (isDay == 0){
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_CLOUD_NIGHT);
+    } else {
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_CLOUD_DAY);
     }
-    //Fuzzy Atmosphere
-    if (((strstr(conditions_buffer,"Mist")) != NULL)
-        || ((strstr(conditions_buffer,"Smoke")) != NULL)
-        || ((strstr(conditions_buffer,"Haze")) != NULL)
-        || ((strstr(conditions_buffer,"Dust")) != NULL)
-        || ((strstr(conditions_buffer,"Fog")) != NULL)
-        || ((strstr(conditions_buffer,"Sand")) != NULL)
-        || ((strstr(conditions_buffer,"Dust")) != NULL)
-        || ((strstr(conditions_buffer,"Ash")) != NULL)
-        || ((strstr(conditions_buffer,"Squal")) != NULL)){
-      snprintf(conditions_buffer, sizeof(conditions_buffer), "%s", "Fog"); 
-      if (daynight_switch == 'N'){
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_FOG_NIGHT);
-      } else {
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_FOG_DAY);
-      }
-    }
-    //Tornado
-    if ((strstr(conditions_buffer,"Tornado")) != NULL){
-      if (daynight_switch == 'N'){
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_TORNADO_NIGHT);
-      } else {
-        s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_TORNADO_DAY);
-      }
-      conditions_switch = 'O';
+  }
+  //Fuzzy Atmosphere
+  if (weatherCode == 45
+    || weatherCode == 48){
+    if (isDay == 0){
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_FOG_NIGHT);
+    } else {
+      local_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_FOG_DAY);
     }
   }
 
-  // if (conditions_switch == ' ') {
-  //   //We didn't have anything, but we had a value for conditions
-  //   // This would only happen if OpenWeather added a new MAIN value in the json
-  //   // let's just default to Clear, since we know that much
-  //   if (daynight_switch == 'N'){
-  //     s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_NIGHT);
-  //   } else {
-  //     s_weather_bitmap = gbitmap_create_with_resource(RESOURCE_ID_DAY);
-  //   }
-  //   conditions_switch = 'D';
-  // }
-
-  // APP_LOG(APP_LOG_LEVEL_INFO, "daynight_switch %c", daynight_switch);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "conditions_switch %c", conditions_switch);
+  APP_LOG(APP_LOG_LEVEL_INFO, "update_weather isDay %d", isDay);
+  APP_LOG(APP_LOG_LEVEL_INFO, "update_weather weatherCode %d", weatherCode);
   
-  if (strlen(conditions_buffer)>0){
-    snprintf(settings.conditions, sizeof(settings.conditions), "%s", conditions_buffer);
-  } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "update_weather conditions_buffer was empty %s", conditions_buffer);
+  if (weatherCode < 100){
+    settings.weatherCode = weatherCode;
   }
-  if (sunrise_time != 0){
-    settings.sunrise_time = sunrise_time;
-  } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunrise_time was empty %d", sunrise_time);
+
+  if (isDay == 0 || isDay == 1){
+    settings.isDay = isDay;
   }
-  if (sunset_time != 0){
-    settings.sunset_time = sunset_time;
-  } else {
-    APP_LOG(APP_LOG_LEVEL_INFO, "update_weather sunset_time was empty %d", sunset_time);
+
+  if ((settings.isDay == 0 || settings.isDay == 1) && settings.weatherCode < 100){
+    gbitmap_destroy(s_weather_bitmap);
+    s_weather_bitmap = local_weather_bitmap;
+
+    gbitmap_destroy(s_ripple_bitmap);
+    s_ripple_bitmap = local_ripple_bitmap;
+
+    // We're done looking at the settings returned. let's save it for future use.
+    save_settings();
+    
+    bitmap_layer_set_bitmap(s_weather_bitmap_layer, s_weather_bitmap);
+    //layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(s_weather_bitmap_layer));
+
+    bitmap_layer_set_bitmap(s_ripple_layer, s_ripple_bitmap);
+    //layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(s_ripple_layer));
   }
-  
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather settings.conditions %s", settings.conditions);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather settings.sunset_time %d", settings.sunset_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "update_weather settings.sunrise_time %d", settings.sunrise_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "sunset_time %d", sunset_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "sunrise_time %d", sunrise_time);
-  // update_bg(conditions_switch, daynight_switch);
-
-  // We're done looking at the settings returned. let's save it for future use.
-  
-  APP_LOG(APP_LOG_LEVEL_ERROR, "update_weather Save");
-  save_settings();
-
-  bitmap_layer_set_bitmap(s_weather_bitmap_layer, s_weather_bitmap);
-  //layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(s_weather_bitmap_layer));
-
-  bitmap_layer_set_bitmap(s_ripple_layer, s_ripple_bitmap);
-  //layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(s_ripple_layer));
 }
 
 static void send_settings_update_weather(){
 
-  APP_LOG(APP_LOG_LEVEL_ERROR, "send_settings_update_weather");
   // Begin dictionary
   DictionaryIterator *iter;
 
@@ -325,12 +213,9 @@ static void send_settings_update_weather(){
 
   if(result == APP_MSG_OK) {
 
-    // APP_LOG(APP_LOG_LEVEL_ERROR, "send_settings_update_weather settings.api: %s", settings.api);
     // This is to pull the settings info from cache and push it to the index.js 
-    dict_write_cstring(iter, MESSAGE_KEY_API, settings.api);
-    dict_write_cstring(iter, MESSAGE_KEY_CONDITIONS, settings.conditions);
-    dict_write_int(iter, MESSAGE_KEY_SUNRISE, &settings.sunrise_time, sizeof(int), true);
-    dict_write_int(iter, MESSAGE_KEY_SUNSET, &settings.sunset_time, sizeof(int), true);
+    dict_write_int(iter, MESSAGE_KEY_WEATHERCODE, &settings.weatherCode, sizeof(int), true);
+    dict_write_int(iter, MESSAGE_KEY_ISDAY, &settings.isDay, sizeof(int), true);
 
     // Send this message
     result = app_message_outbox_send();
@@ -338,8 +223,6 @@ static void send_settings_update_weather(){
     // Check the resultW
     if(result != APP_MSG_OK) {
       APP_LOG(APP_LOG_LEVEL_ERROR, "Error sending the outbox: %d", (int)result);
-    } else {
-      
     }
 
   } else {
@@ -347,19 +230,12 @@ static void send_settings_update_weather(){
     APP_LOG(APP_LOG_LEVEL_ERROR, "Error preparing the outbox: %d", (int)result);
   }
 
-  // APP_LOG(APP_LOG_LEVEL_INFO, "send_settings_update_weather settings.conditions %s", settings.conditions);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "send_settings_update_weather settings.sunset_time %d", settings.sunset_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "send_settings_update_weather settings.sunrise_time %d", settings.sunrise_time);
-  
-  // APP_LOG(APP_LOG_LEVEL_ERROR, "send_settings_update_weather Save");
   save_settings();
-   APP_LOG(APP_LOG_LEVEL_ERROR, "send_settings_update_weather about to update_weather");
   update_weather(iter, false);
 }
 
 static void update_time() {
 
-  APP_LOG(APP_LOG_LEVEL_ERROR, "update_time");
   // Get a tm structure
   time_t temp = time(NULL); 
   struct tm *tick_time = localtime(&temp);
@@ -376,23 +252,19 @@ static void update_time() {
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   
-  APP_LOG(APP_LOG_LEVEL_ERROR, "tick_handler");
   update_time();
-
-  // APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler settings.conditions %s", settings.conditions);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler settings.sunset_time %d", settings.sunset_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler settings.sunrise_time %d", settings.sunrise_time);
   
-  // Get weather update every 30 minutes
-  if((tick_time->tm_min % 5 == 0)) {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "5min tick_handler about to update_weather");
+  // Get weather update every 30min
+  if ((tick_time->tm_min % 30 == 0) || settings.weatherCode > 99 || (settings.isDay != 0 && settings.isDay != 1)) {
+
+    APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler settings.weatherCode %d", settings.weatherCode);
+    APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler tick_time->tm_hr %d", tick_time->tm_hour);
     send_settings_update_weather();
   }
 }
 
 static void window_load(Window *window) {
 
-  APP_LOG(APP_LOG_LEVEL_ERROR, "window_load");
   Layer *window_layer = window_get_root_layer(window);
   GRect fullscreen = layer_get_bounds(window_layer);
 
@@ -435,7 +307,6 @@ static void window_load(Window *window) {
 
   
   DictionaryIterator *iter = NULL;
-  APP_LOG(APP_LOG_LEVEL_ERROR, "window_load about to update_weather");
   update_weather(iter, true);
 }
 
@@ -447,20 +318,11 @@ static void window_unload(Window *window) {
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   
-  APP_LOG(APP_LOG_LEVEL_ERROR, "inbox_received_callback");
   // was this just a ready signal or a "GIVE ME WEATHER I"M HUNGRY NOW!" sign
   Tuple *ready_tuple = dict_find(iterator, READY);
   
-  if (ready_tuple) {
-    
-    // This is just a ready signal, We'll go back to the JS program
-    // and give it the API information
-    //send_settings_update_weather();
-    
-  } else {
+  if (!ready_tuple) {
     // otherwise, this is just a weather update for you
-    // APP_LOG(APP_LOG_LEVEL_ERROR, "inbox_received_callback");
-    // APP_LOG(APP_LOG_LEVEL_ERROR, "inbox_received_callback about to update_weather");
     update_weather(iterator, false);
   }
 }
@@ -481,7 +343,6 @@ static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
 
 static void init(void) {
   
-  APP_LOG(APP_LOG_LEVEL_ERROR, "init");
   
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
@@ -494,11 +355,7 @@ static void init(void) {
   
   // Get any saved storage
   get_settings();
-  
-  // APP_LOG(APP_LOG_LEVEL_INFO, "init settings.conditions %s", settings.conditions);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "init settings.sunset_time %d", settings.sunset_time);
-  // APP_LOG(APP_LOG_LEVEL_INFO, "init settings.sunrise_time %d", settings.sunrise_time);
-  
+    
   const bool animated = true;
   window_stack_push(s_window, animated);
   
@@ -520,8 +377,6 @@ static void deinit(void) {
 
 int main(void) {
   init();
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing, pushed window: %p", s_window);
 
   app_event_loop();
   deinit();
