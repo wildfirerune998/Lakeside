@@ -6,9 +6,6 @@
     "pebble-app"
   ],
   "private": true,
-  "dependencies": {
-    "pebble-clay": "^1.0.4"
-  },
   "pebble": {
     "displayName": "Lakeside",
     "uuid": "416928db-d818-4bce-b7e0-71f16afbfbbc",
