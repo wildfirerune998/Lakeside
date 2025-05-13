@@ -308,6 +308,8 @@ static void window_load(Window *window) {
   
   DictionaryIterator *iter = NULL;
   update_weather(iter, true);
+  // Make sure the time is displayed from the start
+  update_time();
 }
 
 static void window_unload(Window *window) {
