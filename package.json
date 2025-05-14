@@ -1,7 +1,7 @@
 {
   "name": "Lakeside",
   "author": "Hel",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "keywords": [
     "pebble-app"
   ],
@@ -22,7 +22,8 @@
     "messageKeys": {
       "READY": 1,
       "WEATHERCODE": 2,
-      "ISDAY": 3
+      "ISDAY": 3,
+			"RANONCE": 4
     },
     "capabilities": [
       "location"
