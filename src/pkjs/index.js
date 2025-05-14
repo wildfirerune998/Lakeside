@@ -7,6 +7,7 @@
 
 var weatherCode = 100;
 var isDay = 5;
+var ranOnce = 0;
 
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
@@ -40,6 +41,7 @@ function locationSuccess(pos) {
 
           weatherCode = 100;
           isDay = 5;
+          ranOnce = 0;
 
           // Conditions
           var lcl_weatherCode = json.current.weather_code;      
@@ -51,14 +53,18 @@ function locationSuccess(pos) {
             isDay = lcl_isDay;
           }
         
-          // Assemble dictionary using our keys
-          var dictionary = {
-            "WEATHERCODE": weatherCode,
-            "ISDAY": isDay
-          };
           
+            ranOnce = 1;
+            console.log(ranOnce);
             console.log(weatherCode); 
             console.log(isDay); 
+            
+            // Assemble dictionary using our keys
+            var dictionary = {
+              "WEATHERCODE": weatherCode,
+              "ISDAY": isDay,
+              "RANONCE": ranOnce
+            };
             // console.log( pos.coords.latitude); 
             // console.log( pos.coords.longitude); 
           // Send to Pebble
@@ -130,6 +136,12 @@ Pebble.addEventListener('appmessage', function(e) {
   if (isDay_string) {
     isDay = isDay_string.replace(/"/g,"");
   }
+
+  var ranOnce_string;
+  ranOnce_string = JSON.stringify(e.payload.RANONCE);
+  if (ranOnce_string) {
+    ranOnce = ranOnce_string.replace(/"/g,"");
+  }
   
   getWeather();
 
@@ -148,6 +160,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
   weatherCode = claySettings[messageKeys.WEATHERCODE];
   isDay = claySettings[messageKeys.ISDAY];
+  ranOnce = claySettings[messageKeys.RANONCE];
 
   getWeather(); 
 

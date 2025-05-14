@@ -16,11 +16,13 @@ static GFont s_font;
 #define READY 1
 #define WEATHERCODE  2
 #define ISDAY 3
+#define RANONCE 4
 
 // Define our settings struct
 typedef struct {
   int weatherCode;
   int isDay;
+  int ranOnce;
 } ClaySettings;
 
 // An instance of the struct
@@ -31,12 +33,14 @@ static ClaySettings settings;
 static void default_settings() {
   settings.weatherCode = 100;
   settings.isDay = 5;
+  settings.ranOnce = 0;
 }
 
 // Save the settings to persistent storage
 static void save_settings() {
   persist_write_int(MESSAGE_KEY_WEATHERCODE, settings.weatherCode);
   persist_write_int(MESSAGE_KEY_ISDAY, settings.isDay);
+  persist_write_int(MESSAGE_KEY_RANONCE, settings.ranOnce);
 }
 
 // get the saved settings from persistent storage
@@ -44,6 +48,7 @@ static void get_settings() {
   default_settings();
   settings.weatherCode = persist_read_int(MESSAGE_KEY_WEATHERCODE);
   settings.isDay = persist_read_int(MESSAGE_KEY_ISDAY);
+  settings.ranOnce = persist_read_int(MESSAGE_KEY_RANONCE);
 }
 
 // BEGIN weather shenanigans
@@ -52,6 +57,7 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
   // Store incoming information
   int weatherCode = 100;
   int isDay = 5;
+  int ranOnce = 0;
 
   static GBitmap *local_weather_bitmap;
   static GBitmap *local_ripple_bitmap;
@@ -60,6 +66,7 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
     // Read tuples for data
     Tuple *weatherCode_tuple = dict_find(iterator, WEATHERCODE);
     Tuple *isDay_tuple = dict_find(iterator, ISDAY);
+    Tuple *ranOnce_tuple = dict_find(iterator, RANONCE);
 
     // If temp is available, use it. We may not have the weatherCode, but at least show the temp
 
@@ -70,9 +77,13 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
     if (isDay_tuple) {
       isDay =  (int)isDay_tuple->value->int32;
     }
+    if (ranOnce_tuple) {
+      ranOnce =  (int)ranOnce_tuple->value->int32;
+    }
     
     APP_LOG(APP_LOG_LEVEL_INFO, "update_weather isDay %d", isDay);
     APP_LOG(APP_LOG_LEVEL_INFO, "update_weather weatherCode %d", weatherCode);
+    APP_LOG(APP_LOG_LEVEL_INFO, "update_weather ranOnce %d", ranOnce);
   }
 
   if (isDay != 1 && isDay != 0){
@@ -81,6 +92,15 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
 
   if (weatherCode > 99 ){
     weatherCode = settings.weatherCode;
+  }
+
+  if (ranOnce == 0 && settings.ranOnce == 1){
+    ranOnce = settings.ranOnce;
+  }
+  
+  if (!ranOnce){
+    // APP_LOG(APP_LOG_LEVEL_INFO, "AAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHH");
+    return;
   }
 
   if (isDay == 0){
@@ -185,6 +205,10 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
     settings.isDay = isDay;
   }
 
+  if (ranOnce != 0){
+    settings.ranOnce = ranOnce;
+  }
+
   if ((settings.isDay == 0 || settings.isDay == 1) && settings.weatherCode < 100){
     gbitmap_destroy(s_weather_bitmap);
     s_weather_bitmap = local_weather_bitmap;
@@ -206,16 +230,18 @@ static void update_weather(DictionaryIterator *iterator, bool update_background_
 static void send_settings_update_weather(){
 
   // Begin dictionary
-  DictionaryIterator *iter;
+  DictionaryIterator *iter = NULL;
+  
+  // This is to pull the settings info from cache and push it to the index.js 
+  dict_write_int(iter, MESSAGE_KEY_WEATHERCODE, &settings.weatherCode, sizeof(int), true);
+  dict_write_int(iter, MESSAGE_KEY_ISDAY, &settings.isDay, sizeof(int), true);
+  dict_write_int(iter, MESSAGE_KEY_RANONCE, &settings.ranOnce, sizeof(int), true);
 
   // Start the sync to the js
   AppMessageResult result = app_message_outbox_begin(&iter);
 
   if(result == APP_MSG_OK) {
 
-    // This is to pull the settings info from cache and push it to the index.js 
-    dict_write_int(iter, MESSAGE_KEY_WEATHERCODE, &settings.weatherCode, sizeof(int), true);
-    dict_write_int(iter, MESSAGE_KEY_ISDAY, &settings.isDay, sizeof(int), true);
 
     // Send this message
     result = app_message_outbox_send();
@@ -255,7 +281,10 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
   
   // Get weather update every 30min
-  if ((tick_time->tm_min % 30 == 0) || settings.weatherCode > 99 || (settings.isDay != 0 && settings.isDay != 1)) {
+  if ((tick_time->tm_min % 30 == 0) 
+      || settings.weatherCode > 99 
+      || (settings.isDay != 0 && settings.isDay != 1)
+      || settings.ranOnce == 0) {
 
     APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler settings.weatherCode %d", settings.weatherCode);
     APP_LOG(APP_LOG_LEVEL_INFO, "tick_handler tick_time->tm_hr %d", tick_time->tm_hour);
@@ -308,6 +337,8 @@ static void window_load(Window *window) {
   
   DictionaryIterator *iter = NULL;
   update_weather(iter, true);
+  // Make sure the time is displayed from the start
+  update_time();
 }
 
 static void window_unload(Window *window) {
